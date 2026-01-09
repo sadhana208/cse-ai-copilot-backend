@@ -1,7 +1,13 @@
 const express = require("express");
+const OpenAI = require("openai");
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+
+// Initialize OpenAI client
+const client = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY,
+});
 
 // Root route
 app.get("/", (req, res) => {
@@ -28,8 +34,8 @@ app.get("/courses", (req, res) => {
   });
 });
 
-// Explain a topic (mock AI explanation)
-app.get("/explain", (req, res) => {
+// REAL AI explanation endpoint
+app.get("/explain", async (req, res) => {
   const { course, topic } = req.query;
 
   if (!course || !topic) {
@@ -38,11 +44,33 @@ app.get("/explain", (req, res) => {
     });
   }
 
-  res.json({
-    course,
-    topic,
-    explanation: `This is a beginner-friendly explanation of ${topic} in ${course}. AI-powered explanations will be added soon.`
-  });
+  try {
+    const response = await client.chat.completions.create({
+      model: "gpt-4o-mini",
+      messages: [
+        {
+          role: "system",
+          content:
+            "You are a helpful CSE tutor. Explain topics clearly with simple language and examples."
+        },
+        {
+          role: "user",
+          content: `Explain ${topic} in ${course} for a beginner CSE student.`
+        }
+      ]
+    });
+
+    res.json({
+      course,
+      topic,
+      explanation: response.choices[0].message.content
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({
+      error: "AI explanation failed"
+    });
+  }
 });
 
 // Start server
