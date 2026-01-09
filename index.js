@@ -1,9 +1,10 @@
+// clean redeploy trigger
 const express = require("express");
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Root
+// Root route
 app.get("/", (req, res) => {
   res.send("CSE AI Copilot Backend Running");
 });
@@ -13,7 +14,7 @@ app.get("/ping", (req, res) => {
   res.json({ status: "ok", message: "backend alive" });
 });
 
-// Courses
+// List of CSE core courses
 app.get("/courses", (req, res) => {
   res.json({
     courses: [
@@ -28,7 +29,7 @@ app.get("/courses", (req, res) => {
   });
 });
 
-// AI explanation using fetch (NO openai SDK)
+// AI explanation endpoint (NO openai package)
 app.get("/explain", async (req, res) => {
   const { course, topic } = req.query;
 
@@ -40,7 +41,7 @@ app.get("/explain", async (req, res) => {
 
   if (!process.env.OPENAI_API_KEY) {
     return res.status(500).json({
-      error: "OPENAI_API_KEY is not set in Railway variables"
+      error: "OPENAI_API_KEY is missing in Railway variables"
     });
   }
 
@@ -57,11 +58,11 @@ app.get("/explain", async (req, res) => {
           {
             role: "system",
             content:
-              "You are a helpful CSE tutor. Explain topics clearly with simple language and examples."
+              "You are a helpful CSE tutor. Explain topics clearly with examples."
           },
           {
             role: "user",
-            content: `Explain ${topic} in ${course} for a beginner CSE student.`
+            content: `Explain ${topic} in ${course} for a beginner.`
           }
         ]
       })
@@ -81,9 +82,8 @@ app.get("/explain", async (req, res) => {
       topic,
       explanation: data.choices[0].message.content
     });
-
-  } catch (err) {
-    console.error(err);
+  } catch (error) {
+    console.error(error);
     res.status(500).json({
       error: "AI request failed"
     });
