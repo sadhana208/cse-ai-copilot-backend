@@ -28,13 +28,19 @@ app.get("/courses", (req, res) => {
   });
 });
 
-// REAL AI explanation (using fetch)
+// AI explanation using fetch (NO openai SDK)
 app.get("/explain", async (req, res) => {
   const { course, topic } = req.query;
 
   if (!course || !topic) {
     return res.status(400).json({
       error: "Please provide both course and topic"
+    });
+  }
+
+  if (!process.env.OPENAI_API_KEY) {
+    return res.status(500).json({
+      error: "OPENAI_API_KEY is not set in Railway variables"
     });
   }
 
@@ -63,6 +69,13 @@ app.get("/explain", async (req, res) => {
 
     const data = await response.json();
 
+    if (!response.ok) {
+      return res.status(500).json({
+        error: "OpenAI API error",
+        details: data
+      });
+    }
+
     res.json({
       course,
       topic,
@@ -72,7 +85,7 @@ app.get("/explain", async (req, res) => {
   } catch (err) {
     console.error(err);
     res.status(500).json({
-      error: "AI explanation failed"
+      error: "AI request failed"
     });
   }
 });
