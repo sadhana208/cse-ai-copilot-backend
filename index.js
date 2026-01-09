@@ -1,15 +1,9 @@
 const express = require("express");
-const OpenAI = require("openai");
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Initialize OpenAI client
-const client = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
-
-// Root route
+// Root
 app.get("/", (req, res) => {
   res.send("CSE AI Copilot Backend Running");
 });
@@ -19,7 +13,7 @@ app.get("/ping", (req, res) => {
   res.json({ status: "ok", message: "backend alive" });
 });
 
-// List of core CSE courses
+// Courses
 app.get("/courses", (req, res) => {
   res.json({
     courses: [
@@ -34,7 +28,7 @@ app.get("/courses", (req, res) => {
   });
 });
 
-// REAL AI explanation endpoint
+// REAL AI explanation (using fetch)
 app.get("/explain", async (req, res) => {
   const { course, topic } = req.query;
 
@@ -45,26 +39,36 @@ app.get("/explain", async (req, res) => {
   }
 
   try {
-    const response = await client.chat.completions.create({
-      model: "gpt-4o-mini",
-      messages: [
-        {
-          role: "system",
-          content:
-            "You are a helpful CSE tutor. Explain topics clearly with simple language and examples."
-        },
-        {
-          role: "user",
-          content: `Explain ${topic} in ${course} for a beginner CSE student.`
-        }
-      ]
+    const response = await fetch("https://api.openai.com/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${process.env.OPENAI_API_KEY}`
+      },
+      body: JSON.stringify({
+        model: "gpt-4o-mini",
+        messages: [
+          {
+            role: "system",
+            content:
+              "You are a helpful CSE tutor. Explain topics clearly with simple language and examples."
+          },
+          {
+            role: "user",
+            content: `Explain ${topic} in ${course} for a beginner CSE student.`
+          }
+        ]
+      })
     });
+
+    const data = await response.json();
 
     res.json({
       course,
       topic,
-      explanation: response.choices[0].message.content
+      explanation: data.choices[0].message.content
     });
+
   } catch (err) {
     console.error(err);
     res.status(500).json({
