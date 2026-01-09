@@ -28,6 +28,23 @@ app.get("/courses", (req, res) => {
   });
 });
 
+// Explain a topic (mock AI explanation)
+app.get("/explain", (req, res) => {
+  const { course, topic } = req.query;
+
+  if (!course || !topic) {
+    return res.status(400).json({
+      error: "Please provide both course and topic"
+    });
+  }
+
+  res.json({
+    course,
+    topic,
+    explanation: `This is a beginner-friendly explanation of ${topic} in ${course}. AI-powered explanations will be added soon.`
+  });
+});
+
 // Start server
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
